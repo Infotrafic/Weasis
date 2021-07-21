@@ -132,6 +132,9 @@ public class DicomModel implements TreeModel, DataExplorerModel {
   private PropertyChangeSupport propertyChange = null;
   private final SplittingRules splittingRules;
 
+  private CdDetection cdDetection;
+  private DicomExplorer explorer;
+
   public DicomModel() {
     model = new Tree<>(MediaSeriesGroupNode.rootNode);
     splittingRules = new SplittingRules();
@@ -297,6 +300,10 @@ public class DicomModel implements TreeModel, DataExplorerModel {
   }
 
   public void dispose() {
+    if (cdDetection != null) {
+      cdDetection.stop();
+    }
+
     removeAllPropertyChangeListener();
 
     for (MediaSeriesGroup pt : getChildren(MediaSeriesGroupNode.rootNode)) {
@@ -1304,5 +1311,17 @@ public class DicomModel implements TreeModel, DataExplorerModel {
   @Override
   public TreeModelNode getTreeModelNodeForNewPlugin() {
     return patient;
+  }
+
+  public void setCdDetection(CdDetection cdDetection) {
+    this.cdDetection = cdDetection;
+  }
+
+  public DicomExplorer getExplorer() {
+    return explorer;
+  }
+
+  public void setExplorer(DicomExplorer explorer) {
+    this.explorer = explorer;
   }
 }

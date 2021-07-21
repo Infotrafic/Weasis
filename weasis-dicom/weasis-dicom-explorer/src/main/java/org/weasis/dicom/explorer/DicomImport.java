@@ -77,7 +77,7 @@ public class DicomImport extends AbstractWizardDialog {
     ArrayList<AbstractItemDialogPage> list = new ArrayList<>();
     list.add(new LocalImport());
     list.add(new DicomZipImport());
-    list.add(new DicomDirImport());
+    list.add(new DicomDirImport(null));
 
     BundleContext context = FrameworkUtil.getBundle(this.getClass()).getBundleContext();
     try {

@@ -23,6 +23,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.font.FontRenderContext;
@@ -160,6 +162,8 @@ public class DicomExplorer extends PluginTool implements DataExplorerView, Serie
 
   private final JButton koOpen = new JButton(Messages.getString("DicomExplorer.open_ko"), KO_ICON);
 
+  private CdDetection cdDetection;
+
   public DicomExplorer() {
     this(null);
   }
@@ -170,10 +174,20 @@ public class DicomExplorer extends PluginTool implements DataExplorerView, Serie
     setDockableWidth(180);
     dockable.setMaximizable(true);
     this.model = model == null ? new DicomModel() : model;
+    this.model.setExplorer(this);
     this.selectionList = new SeriesSelectionModel(patientContainer);
     thumnailView.getVerticalScrollBar().setUnitIncrement(16);
     thumnailView.setViewportView(patientContainer);
     changeToolWindowAnchor(getDockable().getBaseLocation());
+    addComponentListener(
+            new ComponentAdapter() {
+              @Override
+              public void componentShown(ComponentEvent e) {
+                super.componentShown(e);
+              }
+            });
+    cdDetection = new CdDetection(model);
+    cdDetection.start();
   }
 
   public SeriesSelectionModel getSelectionList() {

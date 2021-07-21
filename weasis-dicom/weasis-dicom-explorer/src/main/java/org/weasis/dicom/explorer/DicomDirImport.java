@@ -29,6 +29,8 @@ import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileFilter;
+
+import com.sun.istack.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.weasis.core.api.gui.util.AbstractItemDialogPage;
@@ -50,14 +52,20 @@ public class DicomDirImport extends AbstractItemDialogPage implements ImportDico
   private JButton btncdrom;
   private JCheckBox chckbxWriteInCache;
 
-  public DicomDirImport() {
+  // Overrides the write in cache checkbox
+  // Used to simulate the dialog without displaying it
+  private boolean forceWriteInCache = false;
+
+  // importDirPath is used to set the text field path text
+  // If null, the last import path will be used
+  public DicomDirImport(@Nullable String importDirPath) {
     super(Messages.getString("DicomDirImport.dicomdir"));
     setComponentPosition(5);
-    initGUI();
+    initGUI(importDirPath);
     initialize(true);
   }
 
-  public void initGUI() {
+  public void initGUI(@Nullable String importDirPath) {
     GridBagLayout gridBagLayout = new GridBagLayout();
     setLayout(gridBagLayout);
     setBorder(
@@ -85,7 +93,7 @@ public class DicomDirImport extends AbstractItemDialogPage implements ImportDico
     gbc_textField.gridx = 1;
     gbc_textField.gridy = 0;
     JMVUtils.setPreferredWidth(textField, 375, 325);
-    textField.setText(Activator.IMPORT_EXPORT_PERSISTENCE.getProperty(lastDICOMDIR, ""));
+    textField.setText(importDirPath != null ? importDirPath : Activator.IMPORT_EXPORT_PERSISTENCE.getProperty(lastDICOMDIR, ""));
     add(textField, gbc_textField);
 
     btnSearch = new JButton(" ... ");
@@ -222,7 +230,7 @@ public class DicomDirImport extends AbstractItemDialogPage implements ImportDico
         }
       }
     }
-    List<LoadSeries> loadSeries = loadDicomDir(file, dicomModel, chckbxWriteInCache.isSelected());
+    List<LoadSeries> loadSeries = loadDicomDir(file, dicomModel, forceWriteInCache || chckbxWriteInCache.isSelected());
 
     if (loadSeries != null && !loadSeries.isEmpty()) {
       DicomModel.LOADING_EXECUTOR.execute(new LoadDicomDir(loadSeries, dicomModel));
@@ -301,5 +309,9 @@ public class DicomDirImport extends AbstractItemDialogPage implements ImportDico
     }
 
     return null;
+  }
+
+  public void setForceWriteInCache(boolean value) {
+    forceWriteInCache = value;
   }
 }
