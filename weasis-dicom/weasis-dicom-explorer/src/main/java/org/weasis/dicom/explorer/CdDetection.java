@@ -111,20 +111,7 @@ public class CdDetection {
     // Error, cannot import
     if (!importing) {
       SwingUtilities.invokeLater(
-              () -> {
-                // Ask to try again
-                int tryAgainResult =
-                        JOptionPane.showConfirmDialog(
-                                null,
-                                "Failed to import CD contents, retry ?",
-                                "Import failed",
-                                JOptionPane.YES_NO_OPTION,
-                                JOptionPane.ERROR_MESSAGE);
-
-                if (tryAgainResult == JOptionPane.YES_OPTION) {
-                  SwingUtilities.invokeLater(this::importCdContent);
-                }
-              });
+              () -> JOptionPane.showMessageDialog(null, Messages.getString("CdDetection.DicomdirNotFound")));
     }
   }
 
