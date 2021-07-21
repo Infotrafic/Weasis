@@ -52,6 +52,7 @@ public class ThumbnailLoader {
   private int currentLoading = 0;
   private boolean allPreloaded = false;
   private boolean[] isPreloaded;
+  private boolean[] cannotLoad;
   private DicomModel model;
 
   public ThumbnailLoader(List<LoadSeries> loadSeries, DicomModel model) {
@@ -60,6 +61,7 @@ public class ThumbnailLoader {
 
     // false by default
     this.isPreloaded = new boolean[loadSeries.size()];
+    this.cannotLoad = new boolean[loadSeries.size()];
   }
 
   // Sort series in place by priority
@@ -99,6 +101,24 @@ public class ThumbnailLoader {
 
     // No more thumbnail to preload
     if (currentLoading == oldCurrentLoading) {
+      // Verify that all thumbnails are loaded (check also that there is at least one image to load)
+      for (int i = 0; i < loadSeries.size(); ++i) {
+        LoadSeries series = loadSeries.get(i);
+
+        // Not loaded, try again
+        if (!cannotLoad[i] &&
+                series.getSeriesInstanceListSize() != 0 &&
+                series.getDicomSeries().size(null) == 0) {
+          // Avoid infinite loop
+          cannotLoad[i] = true;
+
+          // Try to load it one more time
+          currentLoading = i;
+          loadSeries.get(currentLoading).setForcePriority();
+          return;
+        }
+      }
+
       allPreloaded = true;
       currentLoading = 0;
 
