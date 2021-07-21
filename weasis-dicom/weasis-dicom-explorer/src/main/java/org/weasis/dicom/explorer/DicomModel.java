@@ -132,6 +132,9 @@ public class DicomModel implements TreeModel, DataExplorerModel {
   private PropertyChangeSupport propertyChange = null;
   private final SplittingRules splittingRules;
 
+  // Thumbnail preload manager for all series
+  private ThumbnailLoader thumbnailLoader;
+
   public DicomModel() {
     model = new Tree<>(MediaSeriesGroupNode.rootNode);
     splittingRules = new SplittingRules();
@@ -900,6 +903,15 @@ public class DicomModel implements TreeModel, DataExplorerModel {
           // If similar add to the original series
           if (isSimilar(rules, initialSeries, media)) {
             initialSeries.addMedia((DicomImageElement) media);
+
+            // Preload the thumbnail and update the UI
+            Thumbnail thumb = (Thumbnail) initialSeries.getTagValue(TagW.Thumbnail);
+            if (thumb != null) {
+              thumb.preloadThumbnail(media);
+              thumb.revalidate();
+              thumb.repaint();
+            }
+
             return false;
           }
 
@@ -1304,5 +1316,13 @@ public class DicomModel implements TreeModel, DataExplorerModel {
   @Override
   public TreeModelNode getTreeModelNodeForNewPlugin() {
     return patient;
+  }
+
+  public ThumbnailLoader getThumbnailLoader() {
+    return thumbnailLoader;
+  }
+
+  public void setThumbnailLoader(ThumbnailLoader thumbnailLoader) {
+    this.thumbnailLoader = thumbnailLoader;
   }
 }

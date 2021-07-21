@@ -1029,6 +1029,12 @@ public class DicomExplorer extends PluginTool implements DataExplorerView, Serie
         }
       }
     }
+
+    // Set instance list to order by size
+    for (int i = 1; i < list.size(); ++i) {
+      list.get(i).setTag(TagW.WadoInstanceReferenceList, list.get(0).getTagValue(TagW.WadoInstanceReferenceList));
+    }
+
     return list;
   }
 
@@ -1057,6 +1063,7 @@ public class DicomExplorer extends PluginTool implements DataExplorerView, Serie
 
       SeriesThumbnail thumb = (SeriesThumbnail) dicomSeries.getTagValue(TagW.Thumbnail);
       if (thumb != null) {
+        thumb.setSplit();
         thumb.reBuildThumbnail();
       }
     }
@@ -1091,6 +1098,8 @@ public class DicomExplorer extends PluginTool implements DataExplorerView, Serie
         }
       }
     }
+
+    sortSeriesByPriority(studyPane);
   }
 
   private void selectStudy() {
@@ -1397,6 +1406,7 @@ public class DicomExplorer extends PluginTool implements DataExplorerView, Serie
             // In case series is downloaded or canceled
             LoadSeries loader = (LoadSeries) series.getSeriesLoader();
             thumb.setProgressBar(loader.isDone() ? null : loader.getProgressBar());
+            thumb.setNbTotalImages(((LoadSeries) series.getSeriesLoader()).getSeriesInstanceListSize());
           }
           thumb.registerListeners();
           ThumbnailMouseAndKeyAdapter thumbAdapter =
@@ -1449,5 +1459,33 @@ public class DicomExplorer extends PluginTool implements DataExplorerView, Serie
   @Override
   public boolean canImportFiles() {
     return true;
+  }
+
+  // Sorts series by the priority of loading defined in ThumbnailLoader.sortByPriority
+  private void sortSeriesByPriority(StudyPane studyPane) {
+    List<SeriesPane> seriesList = studyPane.getSeriesPaneList();
+
+    // Sort series by priority
+    ThumbnailLoader.sortByPriority(seriesList);
+
+    // Update UI
+    studyPane.removeAll();
+    for (int i = 0; i < seriesList.size(); i++) {
+      SeriesPane s = seriesList.get(i);
+      studyPane.addPane(s, i);
+    }
+
+    studyPane.revalidate();
+    studyPane.repaint();
+  }
+
+  // Calls sortSeriesByPriority for every series (all patients / studies)
+  public void sortAllSeriesByPriority() {
+    for (PatientPane patientPane : patientPaneList) {
+      List<StudyPane> studies = patient2study.get(patientPane.patient);
+      for (StudyPane studyPane : studies) {
+        sortSeriesByPriority(studyPane);
+      }
+    }
   }
 }

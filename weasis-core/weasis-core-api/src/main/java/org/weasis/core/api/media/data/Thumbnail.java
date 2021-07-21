@@ -385,6 +385,12 @@ public class Thumbnail extends JLabel implements Thumbnailable {
     }
   }
 
+  // Load the thumbnail from DicomModel.applySplittingRules in advance.
+  // Called before loadThumbnail
+  public void preloadThumbnail(MediaElement media) {
+    loadThumbnail(media, true, null);
+  }
+
   class Load implements Callable<PlanarImage> {
 
     private final File path;

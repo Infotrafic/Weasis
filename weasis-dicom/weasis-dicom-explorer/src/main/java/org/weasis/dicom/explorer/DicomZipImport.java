@@ -128,6 +128,7 @@ public class DicomZipImport extends AbstractItemDialogPage implements ImportDico
         DicomDirLoader dirImport = new DicomDirLoader(dicomdir, dicomModel, false);
         List<LoadSeries> loadSeries = dirImport.readDicomDir();
         if (loadSeries != null && !loadSeries.isEmpty()) {
+          dicomModel.setThumbnailLoader(new ThumbnailLoader(loadSeries, dicomModel));
           DicomModel.LOADING_EXECUTOR.execute(new LoadDicomDir(loadSeries, dicomModel));
         } else {
           LOGGER.error("Cannot import DICOM from {}", file);

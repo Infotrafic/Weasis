@@ -76,6 +76,7 @@ public class ImportToolBar extends WtoolBar {
     } else {
       List<LoadSeries> loadSeries = DicomDirImport.loadDicomDir(file, model, true);
       if (loadSeries != null && !loadSeries.isEmpty()) {
+        model.setThumbnailLoader(new ThumbnailLoader(loadSeries, model));
         DicomModel.LOADING_EXECUTOR.execute(new LoadDicomDir(loadSeries, model));
       } else {
         LOGGER.error("Cannot import DICOM from {}", file);

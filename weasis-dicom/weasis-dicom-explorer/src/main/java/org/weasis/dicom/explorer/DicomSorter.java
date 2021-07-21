@@ -23,6 +23,7 @@ import org.weasis.core.api.media.data.TagW;
 import org.weasis.dicom.codec.TagD;
 import org.weasis.dicom.explorer.DicomExplorer.SeriesPane;
 import org.weasis.dicom.explorer.DicomExplorer.StudyPane;
+import org.weasis.dicom.explorer.wado.SeriesInstanceList;
 
 public class DicomSorter {
   private static final Collator collator = Collator.getInstance(Locale.getDefault());
@@ -105,12 +106,39 @@ public class DicomSorter {
           MediaSeriesGroup st1 = (MediaSeriesGroup) o1;
           MediaSeriesGroup st2 = (MediaSeriesGroup) o2;
 
-          // Force Dose report to be at the end
+          // Force structured report to be at the end
+          if (isStructuredReport(st1)) {
+            return 1;
+          }
+          if (isStructuredReport(st2)) {
+            return -1;
+          }
+
+          // Force Dose report to be at the end but before structured reports
           if (isDoseReport(st1)) {
             return 1;
           }
           if (isDoseReport(st2)) {
             return -1;
+          }
+
+          // Force reformatted to be at the top
+          if (isReformatted(st1)) {
+            // Reformatted vs reformatted, compare size
+            if (isReformatted(st2)) {
+              return compareInstanceListSize(st1, st2);
+            }
+
+            return -1;
+          }
+          if (isReformatted(st2)) {
+            return 1;
+          }
+
+          int sizeCmp = compareInstanceListSize(st1, st2);
+
+          if (sizeCmp != 0) {
+            return sizeCmp;
           }
 
           Integer val1 = TagD.getTagValue(st1, Tag.SeriesNumber, Integer.class);
@@ -244,7 +272,7 @@ public class DicomSorter {
         return Objects.equals(o1, o2) ? 0 : -1;
       };
 
-  private static boolean isDoseReport(MediaSeriesGroup series) {
+  public static boolean isDoseReport(MediaSeriesGroup series) {
     String s1 = TagD.getTagValue(series, Tag.SOPClassUID, String.class);
     if (s1 == null || !s1.startsWith("1.2.840.10008.5.1.4.1.1.88")) {
       return false;
@@ -252,5 +280,59 @@ public class DicomSorter {
     return "1.2.840.10008.5.1.4.1.1.88.67".equals(s1)
         || "1.2.840.10008.5.1.4.1.1.88.68".equals(s1) // NON-NLS
         || "1.2.840.10008.5.1.4.1.1.88.73".equals(s1);
+  }
+
+  public static boolean isStructuredReport(MediaSeriesGroup series) {
+    return series instanceof MediaSeries && ((MediaSeries)series).getMimeType().equals("sr/dicom");
+  }
+
+  public static boolean isReformatted(MediaSeriesGroup series) {
+    // Checks whether the sop class uid is one of these
+    // This list was found here :
+    // http://dicom.nema.org/dicom/2013/output/chtml/part04/sect_B.5.html
+    String[] enhanced = {
+            "1.2.840.10008.5.1.4.1.1.2.1",
+            "1.2.840.10008.5.1.4.1.1.2.2",
+            "1.2.840.10008.5.1.4.1.1.4.1",
+            "1.2.840.10008.5.1.4.1.1.4.3",
+            "1.2.840.10008.5.1.4.1.1.4.4",
+            "1.2.840.10008.5.1.4.1.1.6.2",
+            "1.2.840.10008.5.1.4.1.1.12.1.1",
+            "1.2.840.10008.5.1.4.1.1.12.2.1",
+            "1.2.840.10008.5.1.4.1.1.88.22",
+            "1.2.840.10008.5.1.4.1.1.88.76",
+            "1.2.840.10008.5.1.4.1.1.130",
+            "1.2.840.10008.5.1.4.1.1.128.1",
+    };
+
+    String uid = TagD.getTagValue(series, Tag.SOPClassUID, String.class);
+    if (uid == null) {
+      return false;
+    }
+
+    for (String enhancedUid : enhanced) {
+      if (uid.equals(enhancedUid)) {
+        return true;
+      }
+    }
+
+    // If the name is reformatted, returns true too
+    return series.toString().equalsIgnoreCase("reformatted");
+  }
+
+  private static int compareInstanceListSize(MediaSeriesGroup series1, MediaSeriesGroup series2) {
+    SeriesInstanceList seriesInstanceList1 =
+            TagD.getTagValue(series1, TagW.WadoInstanceReferenceList, SeriesInstanceList.class);
+    SeriesInstanceList seriesInstanceList2 =
+            TagD.getTagValue(series2, TagW.WadoInstanceReferenceList, SeriesInstanceList.class);
+
+    // Add o1 after o2
+    if (seriesInstanceList1 != null && seriesInstanceList2 != null) {
+      if (seriesInstanceList1.size() != seriesInstanceList2.size()) {
+        return seriesInstanceList1.size() > seriesInstanceList2.size() ? 1 : -1;
+      }
+    }
+
+    return 0;
   }
 }

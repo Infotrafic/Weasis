@@ -91,6 +91,14 @@ public class SeriesThumbnail extends Thumbnail
   private Point dragPressed = null;
   private DragSource dragSource = null;
 
+  // Amount of images of the whole series (loaded + not loaded)
+  // If -1, this value is not displayed
+  private int nbTotalImages = -1;
+  // Whether it is a split series fully loaded (it is a part of a split series)
+  private boolean isSplit = false;
+  // If it is a split series, the number of loaded images is not series.size() but this variable
+  private int splitImagesLoaded = -1;
+
   public SeriesThumbnail(final MediaSeries<? extends MediaElement> sequence, int thumbnailSize) {
     super(thumbnailSize);
     if (sequence == null) {
@@ -344,7 +352,16 @@ public class SeriesThumbnail extends Thumbnail
         g2d.drawString(nb, sx, y + fontHeight - 3);
       }
 
-      String nbImg = "[" + series.size(null) + "]";
+      int nbLoadedImg = !isSplit && splitImagesLoaded != -1 ? splitImagesLoaded : series.size(null);
+      String nbImg = "[" + nbLoadedImg;
+
+      // Add the total amount of images
+      if (nbTotalImages != -1 && nbTotalImages != nbLoadedImg && !isSplit) {
+        nbImg += " / " + nbTotalImages;
+      }
+
+      nbImg += "]";
+
       int hbleft = y + height - 3;
       int w = g2d.getFontMetrics().stringWidth(nbImg);
       g2d.setPaint(Color.BLACK);
@@ -444,5 +461,17 @@ public class SeriesThumbnail extends Thumbnail
   @Override
   public void mouseExited(MouseEvent e) {
     // Do nothing
+  }
+
+  public void setNbTotalImages(int nbTotalImages) {
+    this.nbTotalImages = nbTotalImages;
+  }
+
+  public void setSplit() {
+    isSplit = true;
+  }
+
+  public void setSplitImagesLoaded(int splitImagesLoaded) {
+    this.splitImagesLoaded = splitImagesLoaded;
   }
 }
